@@ -29,6 +29,13 @@
       "PeibinLaravelTest\\Utils\\": "tests/"
     }
   },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "PeibinLaravel\\Utils\\UtilServiceProvider"
+      ]
+    }
+  },
   "config": {
     "sort-packages": true
   },
