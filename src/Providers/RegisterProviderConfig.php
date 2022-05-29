@@ -21,13 +21,21 @@ trait RegisterProviderConfig
 
     protected function registerConfigs(array $configs): void
     {
-        $processes = ['dependencies', 'commands', 'processes', 'listeners', 'publish'];
-        foreach ($processes as $key) {
-            if ($config = $configs[$key] ?? []) {
+        $specials = ['dependencies', 'commands', 'listeners', 'publish'];
+        $specials = array_flip($specials);
+        foreach ($configs as $key => $config) {
+            if (isset($specials[$key])) {
                 $method = 'register' . ucfirst($key);
                 call_user_func([$this, $method], $config);
+            } else {
+                call_user_func([$this, 'registerConfig'], $key, $config);
             }
         }
+    }
+
+    protected function registerConfig(string $key, array $value): void
+    {
+        Config::set($key, array_merge_recursive(config($key, []), $value));
     }
 
     protected function registerDependencies(array $dependencies): void
@@ -45,13 +53,6 @@ trait RegisterProviderConfig
     protected function registerCommands(array $commands): void
     {
         $this->app->make(Application::class)->resolveCommands($commands);
-    }
-
-    protected function registerProcesses(array $processes): void
-    {
-        foreach ($processes as $process) {
-            Config::push('processes', $process);
-        }
     }
 
     protected function registerListeners(array $listeners): void
