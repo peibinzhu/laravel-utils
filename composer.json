@@ -15,7 +15,7 @@
   ],
   "require": {
     "php": ">=8.0",
-    "laravel/framework": ">=6.0",
+    "laravel/framework": ">=9.0",
     "nikic/php-parser": "^4.1",
     "php-di/phpdoc-reader": "^2.2"
   },

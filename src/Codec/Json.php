@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PeibinLaravel\Utils\Codec;
 
 use InvalidArgumentException;
+use Throwable;
 
 class Json
 {
@@ -12,7 +13,7 @@ class Json
     {
         try {
             $json = json_encode($data, $flags | JSON_THROW_ON_ERROR, $depth);
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             throw new InvalidArgumentException($exception->getMessage(), $exception->getCode());
         }
         return $json;
@@ -22,7 +23,7 @@ class Json
     {
         try {
             $decode = json_decode($json, $assoc, $depth, $flags | JSON_THROW_ON_ERROR);
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             throw new InvalidArgumentException($exception->getMessage(), $exception->getCode());
         }
 

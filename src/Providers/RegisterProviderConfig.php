@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace PeibinLaravel\Utils\Providers;
 
-use Illuminate\Console\Application;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
@@ -52,7 +51,7 @@ trait RegisterProviderConfig
 
     protected function registerCommands(array $commands): void
     {
-        $this->app->make(Application::class)->resolveCommands($commands);
+        $this->commands($commands);
     }
 
     protected function registerListeners(array $listeners): void
