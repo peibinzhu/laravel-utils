@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace PeibinLaravel\Utils\Providers;
 
-use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\Event;
+use Illuminate\Contracts\Config\Repository;
+use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Events\Dispatcher as IlluminateDispatcher;
 use Illuminate\Support\ServiceProvider;
+use SplPriorityQueue;
 
 /**
  * @mixin ServiceProvider
@@ -34,15 +36,16 @@ trait RegisterProviderConfig
 
     protected function registerConfig(string $key, array $value): void
     {
-        Config::set($key, array_merge_recursive(config($key, []), $value));
+        $value = array_merge_recursive(config($key, []), $value);
+        $this->app->get(Repository::class)->set($key, $value);
     }
 
     protected function registerDependencies(array $dependencies): void
     {
         foreach ($dependencies as $abstract => $concrete) {
             if (method_exists($concrete, '__invoke')) {
-                $concrete = function ($app, $parameters) use ($concrete) {
-                    return $app->make($concrete, $parameters)();
+                $concrete = function () use ($concrete) {
+                    return $this->app->call($concrete . '@__invoke');
                 };
             }
             $this->app->bind($abstract, $concrete);
@@ -56,12 +59,53 @@ trait RegisterProviderConfig
 
     protected function registerListeners(array $listeners): void
     {
+        // Support for prioritizing events.
+        // Example: event_class=>[listener_class=>priority]
+        // Example: event_class=>[listener_class]
+        // Example: event_class=>listener_class
+
+        $config = $this->app->get(Repository::class);
+        $dispatcher = $this->app->get(Dispatcher::class);
         foreach ($listeners as $event => $group) {
-            $group = (array)$group;
-            foreach ($group as $listener) {
-                Event::listen($event, $listener);
+            foreach ((array)$group as $listener => $priority) {
+                if (is_int($listener)) {
+                    $listener = $priority;
+                    $priority = 0;
+                }
+
+                if (is_string($listener)) {
+                    $dispatcher->listen($event, $listener);
+
+                    $key = $this->getListenerConfigKey($event, $listener);
+                    $config->set($key, $priority);
+                    $this->resortListeners($dispatcher, $config, $event);
+                }
             }
         }
+    }
+
+    protected function resortListeners(
+        Dispatcher|IlluminateDispatcher $dispatcher,
+        Repository $config,
+        string $event
+    ): void {
+        $newListeners = new SplPriorityQueue();
+        foreach ($dispatcher->getRawListeners()[$event] ?? [] as $listener) {
+            $priority = is_string($listener)
+                ? $config->get($this->getListenerConfigKey($event, $listener), 0)
+                : PHP_INT_MAX;
+            $newListeners->insert($listener, $priority);
+        }
+
+        $dispatcher->forget($event);
+        foreach ($newListeners as $listener) {
+            $dispatcher->listen($event, $listener);
+        }
+    }
+
+    private function getListenerConfigKey(string $event, string $listener): string
+    {
+        return sprintf('listeners.%s.%s', $event, $listener);
     }
 
     protected function registerPublish(array $publish): void
