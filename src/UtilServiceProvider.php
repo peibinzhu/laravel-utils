@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace PeibinLaravel\Utils;
 
 use Illuminate\Support\ServiceProvider;
+use PeibinLaravel\Contracts\StdoutLoggerInterface;
 use PeibinLaravel\Utils\Contracts\Formatter;
-use PeibinLaravel\Utils\Contracts\StdoutLogger as StdoutLoggerContract;
 use PeibinLaravel\Utils\ExceptionHandler\DefaultFormatter;
 use PeibinLaravel\Utils\Providers\RegisterProviderConfig;
 
@@ -18,8 +18,8 @@ class UtilServiceProvider extends ServiceProvider
     {
         return [
             'dependencies' => [
-                Formatter::class            => DefaultFormatter::class,
-                StdoutLoggerContract::class => StdoutLogger::class,
+                Formatter::class             => DefaultFormatter::class,
+                StdoutLoggerInterface::class => StdoutLogger::class,
             ],
         ];
     }

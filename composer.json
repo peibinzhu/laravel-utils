@@ -17,6 +17,7 @@
     "php": ">=8.0",
     "laravel/framework": ">=9.0",
     "nikic/php-parser": "^4.1",
+    "peibin/laravel-contracts": "^1.0",
     "php-di/phpdoc-reader": "^2.2"
   },
   "autoload": {

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace PeibinLaravel\Utils;
 
+use Illuminate\Contracts\Config\Repository;
+use Illuminate\Contracts\Container\Container;
 use Laravel\Octane\Swoole\WorkerState;
-use PeibinLaravel\Utils\Contracts\StdoutLogger as StdoutLoggerContract;
+use PeibinLaravel\Contracts\StdoutLoggerInterface;
 use Psr\Log\LogLevel;
 use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -13,95 +15,70 @@ use Symfony\Component\Console\Output\OutputInterface;
 use function sprintf;
 use function str_replace;
 
-class StdoutLogger implements StdoutLoggerContract
+/**
+ * Default logger for logging server start and requests.
+ * PSR-3 logger implementation that logs to STDOUT, using a newline after each
+ * message. Priority is ignored.
+ */
+class StdoutLogger implements StdoutLoggerInterface
 {
-    /**
-     * @var OutputInterface
-     */
-    private $output;
+    private OutputInterface $output;
 
-    /**
-     * @var array
-     */
-    private $tags = [
+    private array $tags = [
         'component',
     ];
 
-    public function __construct($output = null)
-    {
-        $this->output = $output ?: new ConsoleOutput();
+    public function __construct(
+        protected Container $container,
+        protected Repository $config,
+        ?OutputInterface $output = null
+    ) {
+        $this->output = $output ?? new ConsoleOutput();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function emergency($message, array $context = []): void
     {
         $this->log(LogLevel::EMERGENCY, $message, $context);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function alert($message, array $context = []): void
     {
         $this->log(LogLevel::ALERT, $message, $context);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function critical($message, array $context = []): void
     {
         $this->log(LogLevel::CRITICAL, $message, $context);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function error($message, array $context = []): void
     {
         $this->log(LogLevel::ERROR, $message, $context);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function warning($message, array $context = []): void
     {
         $this->log(LogLevel::WARNING, $message, $context);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function notice($message, array $context = []): void
     {
         $this->log(LogLevel::NOTICE, $message, $context);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function info($message, array $context = []): void
     {
         $this->log(LogLevel::INFO, $message, $context);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function debug($message, array $context = []): void
     {
         $this->log(LogLevel::DEBUG, $message, $context);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function log($level, $message, array $context = []): void
     {
-        $config = config('logging.' . StdoutLoggerContract::class, ['log_level' => []]);
+        $config = $this->config->get(StdoutLoggerInterface::class, ['log_level' => []]);
         if (!in_array($level, $config['log_level'], true)) {
             return;
         }
@@ -117,32 +94,23 @@ class StdoutLogger implements StdoutLoggerContract
             return sprintf('{%s}', $key);
         }, $keys);
         $message = str_replace($search, $context, $this->getMessage((string)$message, $level, $tags));
-        if (app()->has(WorkerState::class)) {
+
+        // Output raw json content when octane.
+        if ($this->container->has(WorkerState::class)) {
             $message = json_encode(['type' => 'raw', 'message' => urlencode($message)]);
         }
+
         $this->output->writeln($message);
     }
 
     protected function getMessage(string $message, string $level = LogLevel::INFO, array $tags = []): string
     {
-        $tag = null;
-        switch ($level) {
-            case LogLevel::EMERGENCY:
-            case LogLevel::ALERT:
-            case LogLevel::CRITICAL:
-                $tag = 'error';
-                break;
-            case LogLevel::ERROR:
-                $tag = 'fg=red';
-                break;
-            case LogLevel::WARNING:
-            case LogLevel::NOTICE:
-                $tag = 'comment';
-                break;
-            case LogLevel::INFO:
-            default:
-                $tag = 'info';
-        }
+        $tag = match ($level) {
+            LogLevel::EMERGENCY, LogLevel::ALERT, LogLevel::CRITICAL => 'error',
+            LogLevel::ERROR => 'fg=red',
+            LogLevel::WARNING, LogLevel::NOTICE => 'comment',
+            default => 'info',
+        };
 
         $template = sprintf('<%s>[%s]</>', $tag, strtoupper($level));
         $implodedTags = '';
