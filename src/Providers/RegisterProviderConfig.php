@@ -48,7 +48,7 @@ trait RegisterProviderConfig
                     return $this->app->call($concrete . '@__invoke');
                 };
             }
-            $this->app->bind($abstract, $concrete);
+            $this->app->singleton($abstract, $concrete);
         }
     }
 
