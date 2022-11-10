@@ -43,7 +43,11 @@ trait RegisterProviderConfig
     protected function registerDependencies(array $dependencies): void
     {
         foreach ($dependencies as $abstract => $concrete) {
-            if (method_exists($concrete, '__invoke')) {
+            if (
+                is_string($concrete) &&
+                class_exists($concrete) &&
+                method_exists($concrete, '__invoke')
+            ) {
                 $concrete = function () use ($concrete) {
                     return $this->app->call($concrete . '@__invoke');
                 };
