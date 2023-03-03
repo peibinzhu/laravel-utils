@@ -8,12 +8,9 @@ use Illuminate\Support\ServiceProvider;
 use PeibinLaravel\Contracts\StdoutLoggerInterface;
 use PeibinLaravel\Utils\Contracts\Formatter;
 use PeibinLaravel\Utils\ExceptionHandler\DefaultFormatter;
-use PeibinLaravel\Utils\Providers\RegisterProviderConfig;
 
 class UtilServiceProvider extends ServiceProvider
 {
-    use RegisterProviderConfig;
-
     public function __invoke(): array
     {
         return [

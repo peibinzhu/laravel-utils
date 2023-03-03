@@ -22,7 +22,7 @@ trait RegisterProviderConfig
 
     protected function registerConfigs(array $configs): void
     {
-        $specials = ['dependencies', 'commands', 'listeners', 'publish'];
+        /*$specials = ['dependencies', 'commands', 'listeners', 'publish'];
         $specials = array_flip($specials);
         foreach ($configs as $key => $config) {
             if (isset($specials[$key])) {
@@ -31,7 +31,7 @@ trait RegisterProviderConfig
             } else {
                 call_user_func([$this, 'registerConfig'], $key, $config);
             }
-        }
+        }*/
     }
 
     protected function registerConfig(string $key, array $value): void
@@ -42,7 +42,7 @@ trait RegisterProviderConfig
 
     protected function registerDependencies(array $dependencies): void
     {
-        foreach ($dependencies as $abstract => $concrete) {
+        /*foreach ($dependencies as $abstract => $concrete) {
             if (
                 is_string($concrete) &&
                 class_exists($concrete) &&
@@ -53,12 +53,12 @@ trait RegisterProviderConfig
                 };
             }
             $this->app->singleton($abstract, $concrete);
-        }
+        }*/
     }
 
     protected function registerCommands(array $commands): void
     {
-        $this->commands($commands);
+//        $this->commands($commands);
     }
 
     protected function registerListeners(array $listeners): void
@@ -68,24 +68,24 @@ trait RegisterProviderConfig
         // Example: event_class=>[listener_class]
         // Example: event_class=>listener_class
 
-        $config = $this->app->get(Repository::class);
-        $dispatcher = $this->app->get(Dispatcher::class);
-        foreach ($listeners as $event => $group) {
-            foreach ((array)$group as $listener => $priority) {
-                if (is_int($listener)) {
-                    $listener = $priority;
-                    $priority = 0;
-                }
+        /* $config = $this->app->get(Repository::class);
+         $dispatcher = $this->app->get(Dispatcher::class);
+         foreach ($listeners as $event => $group) {
+             foreach ((array)$group as $listener => $priority) {
+                 if (is_int($listener)) {
+                     $listener = $priority;
+                     $priority = 0;
+                 }
 
-                if (is_string($listener)) {
-                    $dispatcher->listen($event, $listener);
+                 if (is_string($listener)) {
+                     $dispatcher->listen($event, $listener);
 
-                    $key = $this->getListenerConfigKey($event, $listener);
-                    $config->set($key, $priority);
-                    $this->resortListeners($dispatcher, $config, $event);
-                }
-            }
-        }
+                     $key = $this->getListenerConfigKey($event, $listener);
+                     $config->set($key, $priority);
+                     $this->resortListeners($dispatcher, $config, $event);
+                 }
+             }
+         }*/
     }
 
     protected function resortListeners(
